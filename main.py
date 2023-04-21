@@ -5,18 +5,23 @@ import torch
 import torch.nn as nn
 import json
 from tfidf_generator import TFIDFGenerator
+import gensim.downloader as api
+from word2vec_generator import Word2VecGenerator
 
-def read_json_data(file_path):
-    with open(file_path, 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    return data
+word2vec_model = api.load("word2vec-google-news-300")
+
+def read_json_data(file_path, limit=None):
+    with open(file_path, 'r', encoding= "utf-8") as f:
+        json_str = f.read()
+    json_obj = json.loads(json_str)
+    return json_obj[:limit]
 
 train_set = read_json_data("train_set_splited.json")
 test_set = read_json_data("test_set_splited.json")
 
 
-train_articles, train_questions, train_answer_starts = TFIDFGenerator(train_set).vectorize()
-test_articles, test_questions, test_answer_starts = TFIDFGenerator(test_set).vectorize()
+train_articles, train_questions, train_answer_starts, train_answers = Word2VecGenerator(train_set, word2vec_model).vectorize() #TFIDFGenerator(train_set).vectorize()
+test_articles, test_questions, test_answer_starts, train_answers = Word2VecGenerator(train_set, word2vec_model).vectorize() #TFIDFGenerator(test_set).vectorize()
 
 
 
@@ -31,7 +36,7 @@ test_dataloader = DataLoader(TensorDataset(test_articles, test_questions, test_a
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 input_size = 300
-hidden_size = 128
+hidden_size = 512
 num_layers = 1
 model = RNNModel(input_size, hidden_size, num_layers)
 criterion = nn.CrossEntropyLoss()
