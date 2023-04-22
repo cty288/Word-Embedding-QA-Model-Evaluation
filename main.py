@@ -10,7 +10,7 @@ from word2vec_generator import Word2VecGenerator
 import torch.nn.functional as F
 from sklearn.metrics import f1_score
 
-word2vec_model = api.load("word2vec-google-news-300")
+#word2vec_model = api.load("word2vec-google-news-300")
 
 def read_json_data(file_path, limit=None):
     with open(file_path, 'r', encoding= "utf-8") as f:
@@ -27,22 +27,22 @@ def evaluate_with_tolerance(true_start_positions, predicted_start_positions, tol
             within_tolerance += 1
     return within_tolerance / len(true_start_positions)
 
-
 def exact_match(y_true, y_pred):
     return sum([1 if pred == true else 0 for pred, true in zip(y_pred, y_true)]) / len(y_true)
+
 
 def calculate_f1(y_true, y_pred):
     return f1_score(y_true, y_pred, average='micro') 
 
-
+ 
 #读Json，dev懒得读了
 train_set = read_json_data("train_set_splited.json")
 test_set = read_json_data("test_set_splited.json")
 
 
 #三个model调用获得vector
-train_articles, train_questions, train_answer_starts, train_answers = Word2VecGenerator(train_set, word2vec_model).vectorize() #TFIDFGenerator(train_set).vectorize()
-test_articles, test_questions, test_answer_starts, train_answers = Word2VecGenerator(train_set, word2vec_model).vectorize() #TFIDFGenerator(test_set).vectorize()
+train_articles, train_questions, train_answer_starts, train_answers = TFIDFGenerator(train_set).vectorize()
+test_articles, test_questions, test_answer_starts, train_answers = TFIDFGenerator(test_set).vectorize()
 
 
 #不懂，GPT写的，应该是转换成tensor
@@ -57,9 +57,9 @@ test_dataloader = DataLoader(TensorDataset(test_articles, test_questions, test_a
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 #RNN参数
-input_size = 300
+input_size = 1200
 hidden_size = 256
-num_layers = 2
+num_layers = 3
 model = RNNModel(input_size, hidden_size, num_layers)
 criterion = nn.CrossEntropyLoss()
 no_answer_criterion = nn.BCEWithLogitsLoss()
